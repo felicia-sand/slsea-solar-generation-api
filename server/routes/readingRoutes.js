@@ -238,6 +238,77 @@ router.get("/installations/:id/readings", async (req, res) => {
     }
 });
 
+// GET a specific generation reading
+router.get(
+    "/installations/:id/readings/:readingId",
+    async (req, res) => {
+        try {
+            const { id, readingId } = req.params;
+
+            // Validate installation ID
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return res.status(400).json({
+                    status: "error",
+                    code: "INVALID_INSTALLATION_ID",
+                    message: "Invalid installation ID",
+                    detail: "The supplied installation ID is not a valid MongoDB ObjectId"
+                });
+            }
+
+            // Validate reading ID
+            if (!mongoose.Types.ObjectId.isValid(readingId)) {
+                return res.status(400).json({
+                    status: "error",
+                    code: "INVALID_READING_ID",
+                    message: "Invalid reading ID",
+                    detail: "The supplied reading ID is not a valid MongoDB ObjectId"
+                });
+            }
+
+            // Check that the installation exists
+            const installation = await SolarInstallation.findById(id);
+
+            if (!installation) {
+                return res.status(404).json({
+                    status: "error",
+                    code: "INSTALLATION_NOT_FOUND",
+                    message: "Solar installation not found",
+                    detail: "No solar installation exists with the supplied ID"
+                });
+            }
+
+            // Find the reading belonging to this installation
+            const reading = await GenerationReading.findOne({
+                _id: readingId,
+                installation: id
+            }).populate(
+                "installation",
+                "name installationId meterId inverterId"
+            );
+
+            if (!reading) {
+                return res.status(404).json({
+                    status: "error",
+                    code: "READING_NOT_FOUND",
+                    message: "Generation reading not found",
+                    detail: "No reading exists with the supplied reading ID for this installation"
+                });
+            }
+
+            res.status(200).json({
+                status: "success",
+                data: reading
+            });
+        } catch (error) {
+            res.status(500).json({
+                status: "error",
+                message: "Failed to retrieve generation reading",
+                detail: error.message
+            });
+        }
+    }
+);
+
 // POST a new generation reading for an installation
 router.post("/installations/:id/readings", async (req, res) => {
     try {
