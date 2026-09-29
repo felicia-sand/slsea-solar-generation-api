@@ -6,6 +6,7 @@ const provinceRoutes = require("./routes/provinceRoutes");
 const districtRoutes = require("./routes/districtRoutes");
 const substationRoutes = require("./routes/substationRoutes");
 const installationRoutes = require("./routes/installationRoutes");
+const readingRoutes = require("./routes/readingRoutes");
 
 dotenv.config();
 
@@ -35,6 +36,9 @@ app.use("/api/substations", substationRoutes);
 
 // Solar Installation routes
 app.use("/api/installations", installationRoutes);
+
+// Generation reading routes
+app.use("/api", readingRoutes);
 
 // Test Province creation
 app.post("/api/provinces/test", async (req, res) => {
