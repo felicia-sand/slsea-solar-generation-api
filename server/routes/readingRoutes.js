@@ -370,6 +370,37 @@ router.post("/installations/:id/readings", async (req, res) => {
             });
         }
 
+        // Validate numeric fields
+        if (
+            typeof powerKw !== "number" ||
+            typeof cumulativeEnergyKwh !== "number" ||
+            typeof voltage !== "number" ||
+            !Number.isFinite(powerKw) ||
+            !Number.isFinite(cumulativeEnergyKwh) ||
+            !Number.isFinite(voltage)
+        ) {
+            return res.status(400).json({
+                status: "error",
+                code: "INVALID_READING_VALUES",
+                message: "Invalid generation reading values",
+                detail: "powerKw, cumulativeEnergyKwh and voltage must be valid numeric values"
+            });
+        }
+
+        // Validate non-negative values
+        if (
+            powerKw < 0 ||
+            cumulativeEnergyKwh < 0 ||
+            voltage < 0
+        ) {
+            return res.status(400).json({
+                status: "error",
+                code: "NEGATIVE_READING_VALUE",
+                message: "Generation reading values cannot be negative",
+                detail: "powerKw, cumulativeEnergyKwh and voltage must be zero or greater"
+            });
+        }
+
         // Create the reading
         const reading = await GenerationReading.create({
             installation: id,
