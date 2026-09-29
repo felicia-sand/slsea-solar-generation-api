@@ -2,6 +2,10 @@ const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./db");
 const Province = require("./models/Province");
+const provinceRoutes = require("./routes/provinceRoutes");
+const districtRoutes = require("./routes/districtRoutes");
+const substationRoutes = require("./routes/substationRoutes");
+const installationRoutes = require("./routes/installationRoutes");
 
 dotenv.config();
 
@@ -19,6 +23,18 @@ app.get("/api/health", (req, res) => {
         message: "SLSEA Solar Generation API is running"
     });
 });
+
+// Province routes
+app.use("/api/provinces", provinceRoutes);
+
+// District routes
+app.use("/api/districts", districtRoutes);
+
+// Grid Substation routes
+app.use("/api/substations", substationRoutes);
+
+// Solar Installation routes
+app.use("/api/installations", installationRoutes);
 
 // Test Province creation
 app.post("/api/provinces/test", async (req, res) => {
