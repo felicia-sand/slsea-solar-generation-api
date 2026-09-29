@@ -10,7 +10,6 @@ router.get("/installations/:id/latest-reading", async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Validate installation ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
                 status: "error",
@@ -20,7 +19,6 @@ router.get("/installations/:id/latest-reading", async (req, res) => {
             });
         }
 
-        // Check that the installation exists
         const installation = await SolarInstallation.findById(id);
 
         if (!installation) {
@@ -32,7 +30,6 @@ router.get("/installations/:id/latest-reading", async (req, res) => {
             });
         }
 
-        // Get the most recent reading
         const reading = await GenerationReading.findOne({
             installation: id
         })
@@ -61,10 +58,11 @@ router.get("/installations/:id/latest-reading", async (req, res) => {
     }
 });
 
-// GET all historical readings for an installation
+// GET historical readings with pagination, sorting and time filtering
 router.get("/installations/:id/readings", async (req, res) => {
     try {
         const { id } = req.params;
+        const { from, to } = req.query;
 
         // Validate installation ID
         if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -88,15 +86,146 @@ router.get("/installations/:id/readings", async (req, res) => {
             });
         }
 
-        // Get all readings for the installation
-        const readings = await GenerationReading.find({
+        // Pagination parameters
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+
+        const limit = Math.min(
+            Math.max(parseInt(req.query.limit) || 20, 1),
+            100
+        );
+
+        const skip = (page - 1) * limit;
+
+        // Sorting
+        const sortQuery = req.query.sort || "asc";
+
+        if (!["asc", "desc"].includes(sortQuery)) {
+            return res.status(400).json({
+                status: "error",
+                code: "INVALID_SORT",
+                message: "Invalid sort value",
+                detail: "The sort parameter must be either 'asc' or 'desc'"
+            });
+        }
+
+        const sortOrder = sortQuery === "desc" ? -1 : 1;
+
+        // Base filter
+        const filter = {
             installation: id
-        })
-            .sort({ timestamp: 1 })
+        };
+
+        // Validate and apply "from" time filter
+        if (from) {
+            const fromDate = new Date(from);
+
+            if (Number.isNaN(fromDate.getTime())) {
+                return res.status(400).json({
+                    status: "error",
+                    code: "INVALID_FROM_DATE",
+                    message: "Invalid from date",
+                    detail: "The 'from' parameter must be a valid date and time"
+                });
+            }
+
+            filter.timestamp = {
+                ...filter.timestamp,
+                $gte: fromDate
+            };
+        }
+
+        // Validate and apply "to" time filter
+        if (to) {
+            const toDate = new Date(to);
+
+            if (Number.isNaN(toDate.getTime())) {
+                return res.status(400).json({
+                    status: "error",
+                    code: "INVALID_TO_DATE",
+                    message: "Invalid to date",
+                    detail: "The 'to' parameter must be a valid date and time"
+                });
+            }
+
+            filter.timestamp = {
+                ...filter.timestamp,
+                $lte: toDate
+            };
+        }
+
+        // Validate time range
+        if (
+            filter.timestamp &&
+            filter.timestamp.$gte &&
+            filter.timestamp.$lte &&
+            filter.timestamp.$gte > filter.timestamp.$lte
+        ) {
+            return res.status(400).json({
+                status: "error",
+                code: "INVALID_TIME_RANGE",
+                message: "Invalid time range",
+                detail: "The 'from' date must be earlier than or equal to the 'to' date"
+            });
+        }
+
+        // Get total number of matching readings
+        const totalCount = await GenerationReading.countDocuments(filter);
+
+        // Get paginated readings
+        const readings = await GenerationReading.find(filter)
+            .sort({ timestamp: sortOrder })
+            .skip(skip)
+            .limit(limit)
             .populate("installation", "name installationId meterId inverterId");
+
+        const totalPages = Math.ceil(totalCount / limit);
+
+        // Create pagination links
+        const baseUrl =
+            `${req.protocol}://${req.get("host")}/api${req.path}`;
+
+        const createPageUrl = (pageNumber) => {
+            const params = new URLSearchParams();
+
+            params.set("page", pageNumber);
+            params.set("limit", limit);
+            params.set("sort", sortQuery);
+
+            if (from) {
+                params.set("from", from);
+            }
+
+            if (to) {
+                params.set("to", to);
+            }
+
+            return `${baseUrl}?${params.toString()}`;
+        };
+
+        const next =
+            page < totalPages
+                ? createPageUrl(page + 1)
+                : null;
+
+        const previous =
+            page > 1
+                ? createPageUrl(page - 1)
+                : null;
 
         res.status(200).json({
             status: "success",
+            pagination: {
+                page,
+                limit,
+                totalCount,
+                totalPages,
+                next,
+                previous
+            },
+            filters: {
+                from: from || null,
+                to: to || null
+            },
             count: readings.length,
             data: readings
         });
@@ -113,6 +242,7 @@ router.get("/installations/:id/readings", async (req, res) => {
 router.post("/installations/:id/readings", async (req, res) => {
     try {
         const { id } = req.params;
+
         const {
             timestamp,
             powerKw,
@@ -179,7 +309,8 @@ router.post("/installations/:id/readings", async (req, res) => {
         });
 
         // Location header for the newly created resource
-        const location = `${req.protocol}://${req.get("host")}/api/installations/${id}/readings/${reading._id}`;
+        const location =
+            `${req.protocol}://${req.get("host")}/api/installations/${id}/readings/${reading._id}`;
 
         res
             .status(201)
