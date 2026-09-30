@@ -1,12 +1,13 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./db");
-const Province = require("./models/Province");
+
 const provinceRoutes = require("./routes/provinceRoutes");
 const districtRoutes = require("./routes/districtRoutes");
 const substationRoutes = require("./routes/substationRoutes");
 const installationRoutes = require("./routes/installationRoutes");
 const readingRoutes = require("./routes/readingRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 dotenv.config();
 
@@ -25,40 +26,15 @@ app.get("/api/health", (req, res) => {
     });
 });
 
-// Province routes
+// API routes
 app.use("/api/provinces", provinceRoutes);
-
-// District routes
 app.use("/api/districts", districtRoutes);
-
-// Grid Substation routes
 app.use("/api/substations", substationRoutes);
-
-// Solar Installation routes
 app.use("/api/installations", installationRoutes);
-
-// Generation reading routes
 app.use("/api", readingRoutes);
 
-// Test Province creation
-app.post("/api/provinces/test", async (req, res) => {
-    try {
-        const province = await Province.create({
-            name: req.body.name,
-            code: req.body.code
-        });
-
-        res.status(201).json({
-            status: "success",
-            data: province
-        });
-    } catch (error) {
-        res.status(400).json({
-            status: "error",
-            message: error.message
-        });
-    }
-});
+// Authentication routes
+app.use("/api/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;
 
