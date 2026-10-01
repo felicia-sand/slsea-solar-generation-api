@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const crypto = require("crypto");
 
 const SolarInstallation = require("../models/SolarInstallation");
 const GenerationReading = require("../models/GenerationReading");
@@ -49,8 +50,6 @@ const buildSearchCondition = (value) => {
 
 // ============================================================
 // GET all generation readings
-//
-// Analytical collection resource.
 //
 // Supports:
 // province
@@ -345,7 +344,7 @@ router.get("/readings", protect, async (req, res) => {
         }
 
         // --------------------------------------------------------
-        // Find installations under the selected substations
+        // Find installations under selected substations
         // --------------------------------------------------------
         const installationQuery = {};
 
@@ -558,13 +557,12 @@ router.get("/readings", protect, async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: "error",
-            code: "LATEST_READING_RETRIEVAL_FAILED",
+            code: "READING_FILTER_ERROR",
             message: "Failed to retrieve generation readings",
             detail: error.message
         });
     }
 });
-
 
 // ============================================================
 // GET latest reading for an installation
@@ -617,10 +615,26 @@ router.get(
                 });
             }
 
-            res.status(200).json({
+            // --------------------------------------------------------
+            // ETag / Conditional GET
+            // --------------------------------------------------------
+            const responseData = {
                 status: "success",
                 data: reading
-            });
+            };
+
+            const etag = `"${crypto
+                .createHash("sha256")
+                .update(JSON.stringify(responseData))
+                .digest("hex")}"`;
+
+            res.set("ETag", etag);
+
+            if (req.headers["if-none-match"] === etag) {
+                return res.status(304).end();
+            }
+
+            res.status(200).json(responseData);
 
         } catch (error) {
             res.status(500).json({
@@ -632,7 +646,6 @@ router.get(
         }
     }
 );
-
 
 // ============================================================
 // GET historical readings for one installation
@@ -819,14 +832,13 @@ router.get(
         } catch (error) {
             res.status(500).json({
                 status: "error",
-                code: "LATEST_READING_RETRIEVAL_FAILED",
+                code: "READINGS_RETRIEVAL_FAILED",
                 message: "Failed to retrieve generation readings",
                 detail: error.message
             });
         }
     }
 );
-
 
 // ============================================================
 // GET a specific generation reading
@@ -887,22 +899,37 @@ router.get(
                 });
             }
 
-            res.status(200).json({
+            // --------------------------------------------------------
+            // ETag / Conditional GET
+            // --------------------------------------------------------
+            const responseData = {
                 status: "success",
                 data: reading
-            });
+            };
+
+            const etag = `"${crypto
+                .createHash("sha256")
+                .update(JSON.stringify(responseData))
+                .digest("hex")}"`;
+
+            res.set("ETag", etag);
+
+            if (req.headers["if-none-match"] === etag) {
+                return res.status(304).end();
+            }
+
+            res.status(200).json(responseData);
 
         } catch (error) {
             res.status(500).json({
                 status: "error",
-                code: "LATEST_READING_RETRIEVAL_FAILED",
+                code: "READING_RETRIEVAL_FAILED",
                 message: "Failed to retrieve generation reading",
                 detail: error.message
             });
         }
     }
 );
-
 
 // ============================================================
 // POST a new generation reading
@@ -939,6 +966,34 @@ router.post(
                     code: "INSTALLATION_NOT_FOUND",
                     message: "Solar installation not found",
                     detail: "No solar installation exists with the supplied ID"
+                });
+            }
+
+            // Device users can write only to their own installation
+            if (req.user.role === "device") {
+                if (
+                    !req.user.installation ||
+                    req.user.installation.toString() !== id
+                ) {
+                    return res.status(403).json({
+                        status: "error",
+                        code: "INSTALLATION_FORBIDDEN",
+                        message: "Access denied",
+                        detail: "The device is not authorized to submit readings for this installation"
+                    });
+                }
+            }
+
+            // Only supported roles can create readings
+            if (
+                !["device", "national", "provincial", "district"]
+                    .includes(req.user.role)
+            ) {
+                return res.status(403).json({
+                    status: "error",
+                    code: "ROLE_FORBIDDEN",
+                    message: "Access denied",
+                    detail: "The user role is not authorized to create generation readings"
                 });
             }
 
@@ -1034,13 +1089,12 @@ router.post(
 
             res.status(500).json({
                 status: "error",
-                code: "LATEST_READING_RETRIEVAL_FAILED",
+                code: "READING_CREATION_FAILED",
                 message: "Failed to create generation reading",
                 detail: error.message
             });
         }
     }
 );
-
 
 module.exports = router;
