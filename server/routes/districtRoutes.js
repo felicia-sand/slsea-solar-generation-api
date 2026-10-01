@@ -19,6 +19,7 @@ router.get("/", async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: "error",
+            code: "DISTRICTS_RETRIEVAL_FAILED",
             message: "Failed to retrieve districts",
             detail: error.message
         });
@@ -58,7 +59,8 @@ router.get("/:id", async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: "error",
-            message: "Failed to retrieve district",
+            code: "DISTRICTS_RETRIEVAL_FAILED",
+            message: "Failed to retrieve districts",
             detail: error.message
         });
     }

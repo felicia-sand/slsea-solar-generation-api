@@ -19,6 +19,7 @@ router.get("/", async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: "error",
+            code: "SUBSTATIONS_RETRIEVAL_FAILED",
             message: "Failed to retrieve grid substations",
             detail: error.message
         });
@@ -58,7 +59,8 @@ router.get("/:id", async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: "error",
-            message: "Failed to retrieve grid substation",
+            code: "SUBSTATIONS_RETRIEVAL_FAILED",
+            message: "Failed to retrieve grid substations",
             detail: error.message
         });
     }

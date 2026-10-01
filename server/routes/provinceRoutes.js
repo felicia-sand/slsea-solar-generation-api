@@ -17,6 +17,7 @@ router.get("/", async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: "error",
+            code: "PROVINCES_RETRIEVAL_FAILED",
             message: "Failed to retrieve provinces",
             detail: error.message
         });
@@ -57,6 +58,7 @@ router.get("/:id", async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: "error",
+            code: "PROVINCES_RETRIEVAL_FAILED",
             message: "Failed to retrieve province",
             detail: error.message
         });

@@ -558,7 +558,7 @@ router.get("/readings", protect, async (req, res) => {
     } catch (error) {
         res.status(500).json({
             status: "error",
-            code: "READING_FILTER_ERROR",
+            code: "LATEST_READING_RETRIEVAL_FAILED",
             message: "Failed to retrieve generation readings",
             detail: error.message
         });
@@ -625,6 +625,7 @@ router.get(
         } catch (error) {
             res.status(500).json({
                 status: "error",
+                code: "LATEST_READING_RETRIEVAL_FAILED",
                 message: "Failed to retrieve latest generation reading",
                 detail: error.message
             });
@@ -818,6 +819,7 @@ router.get(
         } catch (error) {
             res.status(500).json({
                 status: "error",
+                code: "LATEST_READING_RETRIEVAL_FAILED",
                 message: "Failed to retrieve generation readings",
                 detail: error.message
             });
@@ -893,6 +895,7 @@ router.get(
         } catch (error) {
             res.status(500).json({
                 status: "error",
+                code: "LATEST_READING_RETRIEVAL_FAILED",
                 message: "Failed to retrieve generation reading",
                 detail: error.message
             });
@@ -1031,6 +1034,7 @@ router.post(
 
             res.status(500).json({
                 status: "error",
+                code: "LATEST_READING_RETRIEVAL_FAILED",
                 message: "Failed to create generation reading",
                 detail: error.message
             });
