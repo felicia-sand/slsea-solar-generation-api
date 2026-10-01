@@ -906,6 +906,7 @@ router.get(
 // ============================================================
 router.post(
     "/installations/:id/readings",
+    protect,
     async (req, res) => {
         try {
             const { id } = req.params;

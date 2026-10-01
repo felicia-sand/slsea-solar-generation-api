@@ -56,7 +56,8 @@ router.post("/login", async (req, res) => {
                 userId: user._id,
                 role: user.role,
                 province: user.province,
-                district: user.district
+                district: user.district,
+                installation: user.installation
             },
             process.env.JWT_SECRET,
             {
@@ -75,7 +76,8 @@ router.post("/login", async (req, res) => {
                     email: user.email,
                     role: user.role,
                     province: user.province,
-                    district: user.district
+                    district: user.district,
+                    installation: user.installation
                 }
             }
         });
@@ -96,7 +98,8 @@ router.get("/me", protect, async (req, res) => {
         const user = await User.findById(req.user.userId)
             .select("-password")
             .populate("province", "name code")
-            .populate("district", "name code");
+            .populate("district", "name code")
+            .populate("installation", "name installationId meterId inverterId");
 
         if (!user) {
             return res.status(404).json({

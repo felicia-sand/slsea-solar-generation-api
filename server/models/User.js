@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema(
 
         role: {
             type: String,
-            enum: ["national", "provincial", "district"],
+            enum: ["national", "provincial", "district", "device"],
             required: true
         },
 
@@ -39,11 +39,15 @@ const userSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "District",
             default: null
+        },
+
+        installation: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "SolarInstallation",
+            default: null
         }
     },
-    {
-        timestamps: true
-    }
+    { timestamps: true }
 );
 
 // Hash password before saving
