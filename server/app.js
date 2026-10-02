@@ -1,6 +1,8 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./db");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
 
 const provinceRoutes = require("./routes/provinceRoutes");
 const districtRoutes = require("./routes/districtRoutes");
@@ -25,6 +27,13 @@ app.get("/api/health", (req, res) => {
         message: "SLSEA Solar Generation API is running"
     });
 });
+
+// Swagger API documentation
+app.use(
+    "/api-docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec)
+);
 
 // API routes
 app.use("/api/provinces", provinceRoutes);

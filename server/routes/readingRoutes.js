@@ -48,25 +48,101 @@ const buildSearchCondition = (value) => {
     return { $or: conditions };
 };
 
-// ============================================================
-// GET all generation readings
-//
-// Supports:
-// province
-// district
-// substation
-// from
-// to
-// page
-// limit
-// sort
-//
-// Example:
-// GET /api/readings?province=Western
-// GET /api/readings?district=Colombo
-// GET /api/readings?substation=Colombo%20Grid%20Substation
-// GET /api/readings?from=2026-09-20&to=2026-09-21
-// ============================================================
+/**
+ * @swagger
+ * /api/readings:
+ *   get:
+ *     summary: Get generation readings
+ *     description: Retrieve generation readings with jurisdiction-based authorization, filtering, pagination, date range filtering, and sorting.
+ *     tags: [Generation Readings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: province
+ *         required: false
+ *         description: Province name, code, or ID
+ *         schema:
+ *           type: string
+ *         example: Western
+ *
+ *       - in: query
+ *         name: district
+ *         required: false
+ *         description: District name, code, or ID
+ *         schema:
+ *           type: string
+ *         example: Colombo
+ *
+ *       - in: query
+ *         name: substation
+ *         required: false
+ *         description: Grid substation name, code, or ID
+ *         schema:
+ *           type: string
+ *         example: Colombo Grid Substation
+ *
+ *       - in: query
+ *         name: from
+ *         required: false
+ *         description: Start date and time for the reading range
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         example: 2026-09-20T00:00:00Z
+ *
+ *       - in: query
+ *         name: to
+ *         required: false
+ *         description: End date and time for the reading range
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         example: 2026-09-21T23:59:59Z
+ *
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         description: Page number
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         example: 1
+ *
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         description: Number of readings per page. Maximum 100.
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *         example: 20
+ *
+ *       - in: query
+ *         name: sort
+ *         required: false
+ *         description: Sort readings by timestamp
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         example: desc
+ *
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved generation readings
+ *       400:
+ *         description: Invalid sort value, date value, or time range
+ *       401:
+ *         description: Authentication required or invalid token
+ *       403:
+ *         description: User is not authorized to access the requested readings
+ *       500:
+ *         description: Failed to retrieve generation readings
+ */
 router.get("/readings", protect, async (req, res) => {
     try {
         const {
@@ -564,9 +640,50 @@ router.get("/readings", protect, async (req, res) => {
     }
 });
 
-// ============================================================
-// GET latest reading for an installation
-// ============================================================
+/**
+ * @swagger
+ * /api/installations/{id}/latest-reading:
+ *   get:
+ *     summary: Get the latest generation reading for an installation
+ *     description: Retrieve the most recent generation reading for a solar installation. Access is protected by authentication and installation jurisdiction authorization.
+ *     tags: [Generation Readings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: MongoDB ObjectId of the solar installation
+ *         schema:
+ *           type: string
+ *         example: 64f123456789abcdef123456
+ *       - in: header
+ *         name: If-None-Match
+ *         required: false
+ *         description: ETag value from a previous response. If unchanged, the server returns 304 Not Modified.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved latest generation reading
+ *         headers:
+ *           ETag:
+ *             description: Current representation version
+ *             schema:
+ *               type: string
+ *       304:
+ *         description: Not Modified
+ *       400:
+ *         description: Invalid installation ID
+ *       401:
+ *         description: Authentication required or invalid token
+ *       403:
+ *         description: Access denied by jurisdiction
+ *       404:
+ *         description: Installation or latest reading not found
+ *       500:
+ *         description: Failed to retrieve latest generation reading
+ */
 router.get(
     "/installations/:id/latest-reading",
     protect,
@@ -647,9 +764,87 @@ router.get(
     }
 );
 
-// ============================================================
-// GET historical readings for one installation
-// ============================================================
+/**
+ * @swagger
+ * /api/installations/{id}/readings:
+ *   get:
+ *     summary: Get historical readings for an installation
+ *     description: Retrieve paginated generation readings for one solar installation with optional time-window filtering and timestamp sorting.
+ *     tags: [Generation Readings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: MongoDB ObjectId of the solar installation
+ *         schema:
+ *           type: string
+ *         example: 64f123456789abcdef123456
+ *
+ *       - in: query
+ *         name: from
+ *         required: false
+ *         description: Start date and time
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         example: 2026-09-20T00:00:00Z
+ *
+ *       - in: query
+ *         name: to
+ *         required: false
+ *         description: End date and time
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         example: 2026-09-21T23:59:59Z
+ *
+ *       - in: query
+ *         name: page
+ *         required: false
+ *         description: Page number
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         example: 1
+ *
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         description: Number of readings per page. Maximum 100.
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *         example: 20
+ *
+ *       - in: query
+ *         name: sort
+ *         required: false
+ *         description: Sort readings by timestamp
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: asc
+ *         example: desc
+ *
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved historical readings
+ *       400:
+ *         description: Invalid ID, sort value, date, or time range
+ *       401:
+ *         description: Authentication required or invalid token
+ *       403:
+ *         description: Access denied by jurisdiction
+ *       404:
+ *         description: Installation not found
+ *       500:
+ *         description: Failed to retrieve generation readings
+ */
 router.get(
     "/installations/:id/readings",
     protect,
@@ -840,9 +1035,66 @@ router.get(
     }
 );
 
-// ============================================================
-// GET a specific generation reading
-// ============================================================
+/**
+ * @swagger
+ * /api/installations/{id}/readings/{readingId}:
+ *   get:
+ *     summary: Get a specific generation reading
+ *     description: Retrieve one generation reading belonging to a specific solar installation. Supports conditional GET using ETag.
+ *     tags: [Generation Readings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: MongoDB ObjectId of the solar installation
+ *         schema:
+ *           type: string
+ *         example: 64f123456789abcdef123456
+ *
+ *       - in: path
+ *         name: readingId
+ *         required: true
+ *         description: MongoDB ObjectId of the generation reading
+ *         schema:
+ *           type: string
+ *         example: 64f987654321abcdef654321
+ *
+ *       - in: header
+ *         name: If-None-Match
+ *         required: false
+ *         description: ETag value from a previous response. If unchanged, the server returns 304 Not Modified.
+ *         schema:
+ *           type: string
+ *
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved generation reading
+ *         headers:
+ *           ETag:
+ *             description: Current representation version
+ *             schema:
+ *               type: string
+ *
+ *       304:
+ *         description: Not Modified
+ *
+ *       400:
+ *         description: Invalid installation or reading ID
+ *
+ *       401:
+ *         description: Authentication required or invalid token
+ *
+ *       403:
+ *         description: Access denied by jurisdiction
+ *
+ *       404:
+ *         description: Installation or reading not found
+ *
+ *       500:
+ *         description: Failed to retrieve generation reading
+ */
 router.get(
     "/installations/:id/readings/:readingId",
     protect,
@@ -931,9 +1183,77 @@ router.get(
     }
 );
 
-// ============================================================
-// POST a new generation reading
-// ============================================================
+/**
+ * @swagger
+ * /api/installations/{id}/readings:
+ *   post:
+ *     summary: Create a generation reading
+ *     description: Submit a new generation reading for a solar installation. Device users may submit readings only for their own installation.
+ *     tags: [Generation Readings]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: MongoDB ObjectId of the solar installation
+ *         schema:
+ *           type: string
+ *         example: 64f123456789abcdef123456
+ *
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - timestamp
+ *               - powerKw
+ *               - cumulativeEnergyKwh
+ *               - voltage
+ *             properties:
+ *               timestamp:
+ *                 type: string
+ *                 format: date-time
+ *                 example: 2026-09-21T10:15:00Z
+ *               powerKw:
+ *                 type: number
+ *                 minimum: 0
+ *                 example: 125.5
+ *               cumulativeEnergyKwh:
+ *                 type: number
+ *                 minimum: 0
+ *                 example: 1850.75
+ *               voltage:
+ *                 type: number
+ *                 minimum: 0
+ *                 example: 230.4
+ *
+ *     responses:
+ *       201:
+ *         description: Generation reading created successfully
+ *         headers:
+ *           Location:
+ *             description: URL of the newly created generation reading
+ *             schema:
+ *               type: string
+ *
+ *       400:
+ *         description: Invalid installation ID, missing fields, invalid timestamp or values, negative values, or duplicate reading
+ *
+ *       401:
+ *         description: Authentication required or invalid token
+ *
+ *       403:
+ *         description: Device or user is not authorized to create this reading
+ *
+ *       404:
+ *         description: Installation not found
+ *
+ *       500:
+ *         description: Failed to create generation reading
+ */
 router.post(
     "/installations/:id/readings",
     protect,

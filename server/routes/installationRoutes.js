@@ -39,15 +39,41 @@ const buildSearchCondition = (value) => {
     return { $or: conditions };
 };
 
-// GET all solar installations
-// Supports filtering by province, district and substation
-//
-// Examples:
-// GET /api/installations
-// GET /api/installations?province=WP
-// GET /api/installations?district=Colombo
-// GET /api/installations?substation=Colombo%20Fort
-// GET /api/installations?province=WP&district=Colombo
+/**
+ * @swagger
+ * /api/installations:
+ *   get:
+ *     summary: Get all solar installations
+ *     description: Retrieve solar installations with optional filtering by province, district, and grid substation.
+ *     tags: [Installations]
+ *     parameters:
+ *       - in: query
+ *         name: province
+ *         required: false
+ *         description: Province name, code, or ID
+ *         schema:
+ *           type: string
+ *         example: WP
+ *       - in: query
+ *         name: district
+ *         required: false
+ *         description: District name, code, or ID
+ *         schema:
+ *           type: string
+ *         example: Colombo
+ *       - in: query
+ *         name: substation
+ *         required: false
+ *         description: Grid substation name, code, or ID
+ *         schema:
+ *           type: string
+ *         example: Colombo Fort
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved solar installations
+ *       500:
+ *         description: Failed to retrieve solar installations
+ */
 router.get("/", async (req, res) => {
     try {
         const { province, district, substation } = req.query;
@@ -271,7 +297,31 @@ router.get("/", async (req, res) => {
     }
 });
 
-// GET one solar installation by ID
+/**
+ * @swagger
+ * /api/installations/{id}:
+ *   get:
+ *     summary: Get a solar installation by ID
+ *     description: Retrieve a single solar installation using its MongoDB ObjectId.
+ *     tags: [Installations]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: MongoDB ObjectId of the solar installation
+ *         schema:
+ *           type: string
+ *           example: 64f123456789abcdef123456
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved solar installation
+ *       400:
+ *         description: Invalid installation ID
+ *       404:
+ *         description: Solar installation not found
+ *       500:
+ *         description: Failed to retrieve solar installation
+ */
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;

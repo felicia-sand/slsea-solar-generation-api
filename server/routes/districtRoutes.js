@@ -4,7 +4,19 @@ const District = require("../models/District");
 
 const router = express.Router();
 
-// GET all districts
+/**
+ * @swagger
+ * /api/districts:
+ *   get:
+ *     summary: Get all districts
+ *     description: Retrieve all districts with their associated province details.
+ *     tags: [Districts]
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved districts
+ *       500:
+ *         description: Failed to retrieve districts
+ */
 router.get("/", async (req, res) => {
     try {
         const districts = await District.find()
@@ -26,7 +38,31 @@ router.get("/", async (req, res) => {
     }
 });
 
-// GET one district by ID
+/**
+ * @swagger
+ * /api/districts/{id}:
+ *   get:
+ *     summary: Get a district by ID
+ *     description: Retrieve a single district using its MongoDB ObjectId.
+ *     tags: [Districts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: MongoDB ObjectId of the district
+ *         schema:
+ *           type: string
+ *           example: 64f123456789abcdef123456
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved district
+ *       400:
+ *         description: Invalid district ID
+ *       404:
+ *         description: District not found
+ *       500:
+ *         description: Failed to retrieve district
+ */
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;

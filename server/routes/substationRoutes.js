@@ -4,7 +4,19 @@ const GridSubstation = require("../models/GridSubstation");
 
 const router = express.Router();
 
-// GET all grid substations
+/**
+ * @swagger
+ * /api/substations:
+ *   get:
+ *     summary: Get all grid substations
+ *     description: Retrieve all grid substations with their associated district details.
+ *     tags: [Substations]
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved grid substations
+ *       500:
+ *         description: Failed to retrieve grid substations
+ */
 router.get("/", async (req, res) => {
     try {
         const substations = await GridSubstation.find()
@@ -26,7 +38,31 @@ router.get("/", async (req, res) => {
     }
 });
 
-// GET one grid substation by ID
+/**
+ * @swagger
+ * /api/substations/{id}:
+ *   get:
+ *     summary: Get a grid substation by ID
+ *     description: Retrieve a single grid substation using its MongoDB ObjectId.
+ *     tags: [Substations]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: MongoDB ObjectId of the grid substation
+ *         schema:
+ *           type: string
+ *           example: 64f123456789abcdef123456
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved grid substation
+ *       400:
+ *         description: Invalid substation ID
+ *       404:
+ *         description: Grid substation not found
+ *       500:
+ *         description: Failed to retrieve grid substation
+ */
 router.get("/:id", async (req, res) => {
     try {
         const { id } = req.params;
