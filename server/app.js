@@ -17,6 +17,15 @@ const app = express();
 
 app.use(express.json());
 
+app.get("/", (req, res) => {
+    res.json({
+        status: "success",
+        message: "SLSEA Solar Generation API is running",
+        documentation: "/api-docs",
+        health: "/api/health"
+    });
+});
+
 // Connect to MongoDB
 connectDB();
 
